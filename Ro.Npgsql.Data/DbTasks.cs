@@ -113,6 +113,37 @@ namespace Ro.Npgsql.Data
             }
         }
 
+        public static async Task<T> GetOneRowAsync<T>(DbCommand cmd, DbConnection conn, Func<IDataReader, Task<T>> mapper)
+        {
+            try
+            {
+                cmd.Connection = conn;
+                using (OpenConnection(conn))
+                {
+                    using (cmd)
+                    {
+                        using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+                        {
+                            if (dr.Read())
+                            {
+                                return await mapper(dr);
+                            }
+
+                            return default(T);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                CloseConnection(conn);
+            }
+        }
+
         public static Task<int> ExecuteNonQueryAsync(DbCommand cmd, DbConnection conn)
         {
             try

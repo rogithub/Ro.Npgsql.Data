@@ -14,5 +14,7 @@ namespace Ro.Npgsql.Data
         Task ExecuteReader(DbCommand cmd, Action<IDataReader> mapper);
         Task<T> GetOneRow<T>(DbCommand cmd, Func<IDataReader, T> mapper);
         Task<IEnumerable<T>> GetRows<T>(DbCommand cmd, Func<IDataReader, T> mapper);
+        Task<T> GetOneRowAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper);
+        Task<IEnumerable<T>> GetRowsAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper);
     }
 }
