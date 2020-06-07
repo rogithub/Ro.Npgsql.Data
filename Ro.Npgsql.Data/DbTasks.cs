@@ -30,7 +30,7 @@ namespace Ro.Npgsql.Data
             return conn;
         }
 
-        public static Task<object> ExecuteScalarAsync(DbCommand cmd, DbConnection conn)
+        public static async Task<object> ExecuteScalarAsync(DbCommand cmd, DbConnection conn)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace Ro.Npgsql.Data
                 {
                     using (cmd)
                     {
-                        return cmd.ExecuteScalarAsync();
+                        return await cmd.ExecuteScalarAsync();
                     }
                 }
             }
@@ -144,7 +144,7 @@ namespace Ro.Npgsql.Data
             }
         }
 
-        public static Task<int> ExecuteNonQueryAsync(DbCommand cmd, DbConnection conn)
+        public static async Task<int> ExecuteNonQueryAsync(DbCommand cmd, DbConnection conn)
         {
             try
             {
@@ -153,7 +153,7 @@ namespace Ro.Npgsql.Data
                 {
                     using (cmd)
                     {
-                        return cmd.ExecuteNonQueryAsync();
+                        return await cmd.ExecuteNonQueryAsync();
                     }
                 }
             }
