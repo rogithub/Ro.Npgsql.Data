@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
@@ -53,7 +54,24 @@ namespace Ro.Npgsql.Data
             }
         }
 
-        public static async Task ExecuteReaderAsync(DbCommand cmd, DbConnection conn, Action<IDataReader> action)
+        public static async Task<IEnumerable<T>> GetRows<T>(DbCommand cmd, DbConnection conn, Func<IDataReader, T> mapper)
+        {
+            List<T> list = new List<T>();
+            await ExecuteReaderAsync(cmd, conn, (dr) => list.Add(mapper(dr)), CommandBehavior.SingleResult);
+            return list;
+        }
+
+        public static async Task<IEnumerable<T>> GetRowsAsync<T>(DbCommand cmd, DbConnection conn, Func<IDataReader, Task<T>> mapper)
+        {
+            List<T> list = new List<T>();
+            await DbTasks.ExecuteReaderAsync(cmd, conn, async (dr) => {
+                list.Add(await mapper(dr));
+            }, CommandBehavior.SingleResult);
+            return list;
+        }
+
+
+        public static async Task ExecuteReaderAsync(DbCommand cmd, DbConnection conn, Action<IDataReader> action, CommandBehavior behavior = CommandBehavior.CloseConnection)
         {
             try
             {
@@ -62,7 +80,7 @@ namespace Ro.Npgsql.Data
                 {
                     using (cmd)
                     {
-                        using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+                        using (IDataReader dr = await cmd.ExecuteReaderAsync(behavior))
                         {
                             while (dr.Read())
                             {
@@ -91,7 +109,7 @@ namespace Ro.Npgsql.Data
                 {
                     using (cmd)
                     {
-                        using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+                        using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
                         {
                             if (dr.Read())
                             {
@@ -122,7 +140,7 @@ namespace Ro.Npgsql.Data
                 {
                     using (cmd)
                     {
-                        using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection))
+                        using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
                         {
                             if (dr.Read())
                             {

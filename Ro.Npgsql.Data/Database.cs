@@ -30,9 +30,9 @@ namespace Ro.Npgsql.Data
             return DbTasks.ExecuteScalarAsync(cmd, GetConnection());
         }
 
-        public Task ExecuteReader(DbCommand cmd, Action<IDataReader> action)
+        public Task ExecuteReader(DbCommand cmd, Action<IDataReader> action, CommandBehavior behavior = CommandBehavior.CloseConnection)
         {
-            return DbTasks.ExecuteReaderAsync(cmd, GetConnection(), action);
+            return DbTasks.ExecuteReaderAsync(cmd, GetConnection(), action, behavior);
         }
 
         public Task<T> GetOneRow<T>(DbCommand cmd, Func<IDataReader, T> mapper)
@@ -40,11 +40,9 @@ namespace Ro.Npgsql.Data
             return DbTasks.GetOneRow(cmd, GetConnection(), mapper);
         }
 
-        public async Task<IEnumerable<T>> GetRows<T>(DbCommand cmd, Func<IDataReader, T> mapper)
+        public Task<IEnumerable<T>> GetRows<T>(DbCommand cmd, Func<IDataReader, T> mapper)
         {
-            List<T> list = new List<T>();
-            await DbTasks.ExecuteReaderAsync(cmd, GetConnection(), (dr) => list.Add(mapper(dr)));
-            return list;
+            return DbTasks.GetRows(cmd, GetConnection(), mapper);
         }
 
         public Task<T> GetOneRowAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper)
@@ -52,13 +50,9 @@ namespace Ro.Npgsql.Data
             return DbTasks.GetOneRowAsync(cmd, GetConnection(), mapper);
         }
 
-        public async Task<IEnumerable<T>> GetRowsAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper)
+        public Task<IEnumerable<T>> GetRowsAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper)
         {
-            List<T> list = new List<T>();
-            await DbTasks.ExecuteReaderAsync(cmd, GetConnection(), async (dr) => {
-                list.Add(await mapper(dr));
-            });
-            return list;
+            return DbTasks.GetRowsAsync(cmd, GetConnection(), mapper);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Ro.Npgsql.Data
     {
         Task<int> ExecuteNonQuery(DbCommand cmd);
         Task<object> ExecuteScalar(DbCommand cmd);
-        Task ExecuteReader(DbCommand cmd, Action<IDataReader> mapper);
+        Task ExecuteReader(DbCommand cmd, Action<IDataReader> mapper, CommandBehavior behavior);
         Task<T> GetOneRow<T>(DbCommand cmd, Func<IDataReader, T> mapper);
         Task<IEnumerable<T>> GetRows<T>(DbCommand cmd, Func<IDataReader, T> mapper);
         Task<T> GetOneRowAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper);
