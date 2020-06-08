@@ -64,7 +64,7 @@ namespace Ro.Npgsql.Data
         public static async Task<IEnumerable<T>> GetRowsAsync<T>(DbCommand cmd, DbConnection conn, Func<IDataReader, Task<T>> mapper)
         {
             List<T> list = new List<T>();
-            await DbTasks.ExecuteReaderAsync(cmd, conn, async (dr) => {
+            await ExecuteReaderAsync(cmd, conn, async (dr) => {
                 list.Add(await mapper(dr));
             }, CommandBehavior.SingleResult);
             return list;
@@ -111,12 +111,7 @@ namespace Ro.Npgsql.Data
                     {
                         using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
                         {
-                            if (dr.Read())
-                            {
-                                return mapper(dr);
-                            }
-
-                            return default(T);
+                            return dr.Read() ? mapper(dr) : default(T);
                         }
                     }
                 }
@@ -142,12 +137,7 @@ namespace Ro.Npgsql.Data
                     {
                         using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
                         {
-                            if (dr.Read())
-                            {
-                                return await mapper(dr);
-                            }
-
-                            return default(T);
+                            return dr.Read() ? await mapper(dr) : default(T);
                         }
                     }
                 }
