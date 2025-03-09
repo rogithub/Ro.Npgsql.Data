@@ -1,31 +1,47 @@
-name: Publish NuGet Package
+name: Build and Publish .NET Package
 
 on:
   push:
-    tags:
-      - 'v*'  # This will trigger the action when a tag like v1.0.1 is pushed.
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest  # This can be changed to windows-latest if you're targeting Windows
 
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2  # Ensures the repo is checked out for the workflow
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: '8.0' # or your project's version
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.x'  # You can adjust this if you want a different version of .NET (e.g., '5.x' or '3.1')
 
-      - name: Restore dependencies
-        run: dotnet restore
+    - name: Restore dependencies
+      run: dotnet restore Ro.Npgsql.Data.sln  # Restore dependencies for the whole solution
 
-      - name: Build the project
-        run: dotnet build --configuration Release
+    - name: Build the solution
+      run: dotnet build Ro.Npgsql.Data.sln --configuration Release  # Build the solution in Release mode
 
-      - name: Pack the project
-        run: dotnet pack --configuration Release --no-build
+    - name: Publish the package
+      run: dotnet publish Ro.Npgsql.Data.sln --configuration Release --output ./publish  # Publish the solution
 
-      - name: Publish NuGet package to GitHub Packages
-        run: dotnet nuget push ./bin/Release/*.nupkg --source "github" --api-key ${{ secrets.ROCK_TOKEN }}
+    - name: Create a Release Package (optional)
+      run: |
+        cd ./publish
+        zip -r ../package.zip .  # This creates a zip file of the published output
+
+    - name: Upload package as an artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-package
+        path: package.zip  # Uploads the package zip as an artifact
+
+    - name: Push NuGet Package to GitHub Packages (optional)
+      run: |
+        dotnet nuget push ./publish/*.nupkg --source "github" --api-key ${{secrets.ROCK_TOKEN}}
+
