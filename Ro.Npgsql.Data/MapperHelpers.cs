@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Xml;
 
 namespace Ro.Npgsql.Data
@@ -6,18 +7,38 @@ namespace Ro.Npgsql.Data
 
     public static class Mappers
     {
+        public static T FromDb<T>(this IDataReader dr, string name, T defaultValue = default(T))
+        {
+            var isNullableType = Nullable.GetUnderlyingType(typeof (T)) != null;
+            var value = dr[name];
 
+            if (value == DBNull.Value && isNullableType)
+            {
+                return defaultValue; 
+            }
+
+            return (T)value;
+        }
+        
         public static Func<object, DateTime> ToDate = (o) =>
         {
             return Convert.ToDateTime(o);
         };
+
+        public static Func<object, DateTime?> ToDateNullable = (o) =>
+        {
+            if (o == DBNull.Value)
+                return null;
+            return ToDate(o);
+        };
+
 
         public static Func<object, string> ToStr = (o) =>
         {
             return Convert.ToString(o);
         };
 
-        public static Func<object, decimal> ToDecilmal = (o) =>
+        public static Func<object, decimal> ToDecimal = (o) =>
         {
             return Convert.ToDecimal(o);
         };

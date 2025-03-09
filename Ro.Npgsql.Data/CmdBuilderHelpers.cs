@@ -3,6 +3,7 @@ using System.Data;
 using System.Linq;
 using System.Data.Common;
 using System;
+using Npgsql;
 
 namespace Ro.Npgsql.Data
 {
@@ -51,20 +52,7 @@ namespace Ro.Npgsql.Data
             
             return name.ToParam(dbType, value);
         }
-
-
-        public static T FromDb<T>(this IDataReader dr, string name, T defaultValue = default(T))
-        {
-            var isNullableType = Nullable.GetUnderlyingType(typeof (T)) != null;
-            var value = dr[name];
-
-            if (value == DBNull.Value && isNullableType)
-            {
-                return defaultValue; 
-            }
-
-            return (T)value;
-        }
+        
         public static DbCommand ToCmd(this string sql, params IDbDataParameter[] commandParameters)
         {
             DbCommand cmd = new NpgsqlCommand(sql);
