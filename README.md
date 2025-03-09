@@ -1,6 +1,5 @@
 # Ro.Npgsql.Data
 
-[![NuGet Badge](https://img.shields.io/nuget/v/Ro.Npgsql.Data.svg?style=flat-square)](https://www.nuget.org/packages/Ro.Npgsql.Data)
 
 Postgres data layer for C#.
 
@@ -47,3 +46,13 @@ git push origin v1.0.2 # Push the tag
    Once you push the tag, the GitHub Actions workflow defined in ```.github/workflows/nuget-publish.yml``` will automatically trigger the build and publish the new version of the package to GitHub Packages.
 
    You can monitor the progress of the workflow in the Actions tab of your GitHub repository.
+
+
+4. **Manual push**
+
+``` bash
+dotnet restore 
+dotnet build Ro.Npgsql.Data
+dotnet pack
+dotnet nuget push Ro.Npgsql.Data/bin/Release/Ro.Npgsql.Data.0.0.5.nupkg --api-key <PASTE YOUR TOKEN HERE> --source "github"
+```
