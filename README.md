@@ -1,7 +1,5 @@
 # Ro.Npgsql.Data
 
-# Project Name
-
 [![NuGet Badge](https://img.shields.io/nuget/v/Ro.Npgsql.Data.svg?style=flat-square)](https://www.nuget.org/packages/Ro.Npgsql.Data)
 
 Postgres data layer for C#.
