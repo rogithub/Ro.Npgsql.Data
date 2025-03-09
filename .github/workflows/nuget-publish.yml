@@ -1,0 +1,31 @@
+name: Publish NuGet Package
+
+on:
+  push:
+    tags:
+      - 'v*'  # This will trigger the action when a tag like v1.0.1 is pushed.
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '8.0' # or your project's version
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build the project
+        run: dotnet build --configuration Release
+
+      - name: Pack the project
+        run: dotnet pack --configuration Release --no-build
+
+      - name: Publish NuGet package to GitHub Packages
+        run: dotnet nuget push ./bin/Release/*.nupkg --source "github" --api-key ${{ secrets.ROCK_TOKEN }}
