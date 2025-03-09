@@ -19,7 +19,7 @@ namespace Ro.Npgsql.Data
 
         public static decimal GetDecilmal(this IDataReader dr, string key)
         {
-            return Mappers.ToDecilmal(dr[key]);
+            return Mappers.ToDecimal(dr[key]);
         }
 
          public static float GetFloat(this IDataReader dr, string key)
