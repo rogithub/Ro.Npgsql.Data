@@ -19,7 +19,7 @@ jobs:
           dotnet-version: '8.0' # or your project's version
 
       - name: Restore dependencies
-        run: dotnet restore Ro.Npgsql.Data/Ro.Npgsql.Data.csproj
+        run: dotnet restore
 
       - name: Build the project
         run: dotnet build --configuration Release
