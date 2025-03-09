@@ -1,13 +1,70 @@
 ﻿using System.Collections.Generic;
 using System.Data;
-using Npgsql;
 using System.Linq;
 using System.Data.Common;
+using System;
 
 namespace Ro.Npgsql.Data
 {
     public static class CmdBuilderHelpers
     {
+        public static DbType ToDbType(Type type)
+        {
+            return type switch
+            {
+                Type b when b == typeof(bool) => DbType.Boolean,
+                Type byteT when byteT == typeof(byte) => DbType.Byte,
+                Type sbyteT when sbyteT == typeof(sbyte) => DbType.SByte,
+                Type shortT when shortT == typeof(short) => DbType.Int16,
+                Type ushortT when ushortT == typeof(ushort) => DbType.UInt16,
+                Type i when i == typeof(int) => DbType.Int32,
+                Type uintT when uintT == typeof(uint) => DbType.UInt32,
+                Type longT when longT == typeof(long) => DbType.Int64,
+                Type ulongT when ulongT == typeof(ulong) => DbType.UInt64,
+                Type f when f == typeof(float) => DbType.Single,
+                Type d when d == typeof(double) => DbType.Double,
+                Type dec when dec == typeof(decimal) => DbType.Decimal,
+                Type date when date == typeof(DateTime) => DbType.DateTime,
+                Type guid when guid == typeof(Guid) => DbType.Guid,
+                Type str when str == typeof(string) => DbType.String,
+                Type charT when charT == typeof(char) => DbType.String, // string for a single character
+                Type byteArray when byteArray == typeof(byte[]) => DbType.Binary,
+                Type dateOffset when dateOffset == typeof(DateTimeOffset) => DbType.DateTimeOffset,
+                Type timeSpan when timeSpan == typeof(TimeSpan) => DbType.Time,
+                _ => DbType.Object
+            };
+        }
+
+
+        public static IDbDataParameter ToParam<T>(this T value, string name)
+        {
+            var type = value == null ? 
+                Nullable.GetUnderlyingType(typeof(T)) 
+                : value.GetType();
+            
+            var dbType = ToDbType(type);
+
+            if (value == null)
+            {
+                return name.ToParam(dbType, DBNull.Value);
+            }
+            
+            return name.ToParam(dbType, value);
+        }
+
+
+        public static T FromDb<T>(this IDataReader dr, string name, T defaultValue = default(T))
+        {
+            var isNullableType = Nullable.GetUnderlyingType(typeof (T)) != null;
+            var value = dr[name];
+
+            if (value == DBNull.Value && isNullableType)
+            {
+                return defaultValue; 
+            }
+
+            return (T)value;
+        }
         public static DbCommand ToCmd(this string sql, params IDbDataParameter[] commandParameters)
         {
             DbCommand cmd = new NpgsqlCommand(sql);

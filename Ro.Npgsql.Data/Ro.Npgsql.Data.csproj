@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <PackageId>Ro.Npgsql.Data</PackageId>
-    <Version>0.0.4</Version>
+    <Version>0.0.5</Version>
     <Authors>Rodrigo Jiménez</Authors>
     <Company>ro-mx</Company>
     <CreatePackageOnBuild>ro-mx</CreatePackageOnBuild>
@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <None Include="../LICENSE" Pack="true" PackagePath="" />
-    <PackageReference Include="Npgsql" Version="4.1.3.1" />
   </ItemGroup>
 
 </Project>
