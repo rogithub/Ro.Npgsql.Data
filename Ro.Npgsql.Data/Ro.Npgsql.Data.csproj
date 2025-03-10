@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <PackageId>Ro.Npgsql.Data</PackageId>
-    <Version>0.0.5</Version>
+    <Version>0.0.6</Version>
     <Authors>Rodrigo Jiménez</Authors>
     <Company>ro-mx</Company>
     <CreatePackageOnBuild>ro-mx</CreatePackageOnBuild>

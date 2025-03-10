@@ -17,7 +17,7 @@ namespace Ro.Npgsql.Data
             return Mappers.ToStr(dr[key]);
         }
 
-        public static decimal GetDecilmal(this IDataReader dr, string key)
+        public static decimal GetDecimal(this IDataReader dr, string key)
         {
             return Mappers.ToDecimal(dr[key]);
         }

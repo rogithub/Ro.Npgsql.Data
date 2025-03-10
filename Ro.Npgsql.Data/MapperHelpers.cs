@@ -12,7 +12,7 @@ namespace Ro.Npgsql.Data
             var isNullableType = Nullable.GetUnderlyingType(typeof (T)) != null;
             var value = dr[name];
 
-            if (value == DBNull.Value && isNullableType)
+            if (value == DBNull.Value)
             {
                 return defaultValue; 
             }
