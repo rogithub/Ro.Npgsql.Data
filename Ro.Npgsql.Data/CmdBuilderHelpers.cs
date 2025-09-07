@@ -43,7 +43,12 @@ namespace Ro.Npgsql.Data
                 Nullable.GetUnderlyingType(typeof(T)) 
                 : value.GetType();
             
-            var dbType = ToDbType(type);
+            if (type == null)
+            {
+                type = typeof(object); // Valor por defecto
+            }
+
+            var dbType = ToDbType(type);            
 
             if (value == null)
             {
@@ -68,7 +73,7 @@ namespace Ro.Npgsql.Data
         public static DbCommand ToCmd(this string sql, DbType type, object value, ParameterDirection direction = ParameterDirection.Input)
         {
             DbCommand cmd = ToCmd(sql);
-            var name = sql.Split(' ').FirstOrDefault(param => param.StartsWith("@"));
+            var name = sql.Split(' ').First(param => param.StartsWith("@"));
             cmd.AddParams(name.Trim(), type, value, direction);
             return cmd;
         }

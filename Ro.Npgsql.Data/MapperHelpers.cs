@@ -12,9 +12,9 @@ namespace Ro.Npgsql.Data
             var isNullableType = Nullable.GetUnderlyingType(typeof (T)) != null;
             var value = dr[name];
 
-            if (value == DBNull.Value)
+            if (value == null || value == DBNull.Value)
             {
-                return defaultValue; 
+                return defaultValue!; 
             }
 
             return (T)value!;
@@ -35,27 +35,30 @@ namespace Ro.Npgsql.Data
 
         public static Func<object, string> ToStr = (o) =>
         {
-            return Convert.ToString(o);
+            if (o == null || o == DBNull.Value)
+                return string.Empty;
+            
+            return Convert.ToString(o) ?? string.Empty;
         };
 
         public static Func<object, decimal> ToDecimal = (o) =>
         {
-            return Convert.ToDecimal(o);
+            return (o == null) ? 0m : Convert.ToDecimal(o!);
         };
 
         public static Func<object, float> ToFloat = (o) =>
         {
-            return Convert.ToSingle(o);
+            return (o == null) ? 0f : Convert.ToSingle(o!);
         };
 
         public static Func<object, int> ToInt = (o) =>
         {
-            return Convert.ToInt32(o);
+            return (o == null) ? 0 : Convert.ToInt32(o!);
         };
 
         public static Func<object, long> ToLong = (o) =>
         {
-            return Convert.ToInt64(o);
+            return (o == null) ? 0L : Convert.ToInt64(o!);
         };
 
         public static Func<object, Guid> ToGuid = (o) =>
