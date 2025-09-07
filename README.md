@@ -29,9 +29,9 @@ O puedes agregar la referencia directamente en tu archivo `.csproj`:
 </Project>
 ```
 
-## Cómo Usarlo
+## Guía de Uso: Creando un Repositorio de Productos
 
-La librería está diseñada para ser usada con inyección de dependencias.
+Esta guía te mostrará cómo usar `Ro.Npgsql.Data` para construir un repositorio de datos completo para una entidad `Producto`.
 
 ### 1. Configuración en `Program.cs`
 
@@ -39,7 +39,6 @@ Primero, registra la implementación de `IDbAsync` en tu contenedor de servicios
 
 ```csharp
 // Program.cs
-
 using Ro.Npgsql.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,177 +61,215 @@ builder.Services.AddTransient<IDbAsync>((svc) =>
 });
 
 // ... resto de la configuración
-
-var app = builder.Build();
-
-// ...
 ```
 
-### 2. Uso de Mappers y DataReaders
+### 2. La Entidad `Producto` y la Interfaz del Repositorio
 
-La librería incluye una serie de métodos de extensión para `IDataReader` que simplifican la lectura de datos y la hacen más segura, manejando conversiones y valores `DBNull.Value` automáticamente.
-
-#### Métodos de Extensión Comunes
-
-Puedes acceder a los valores de las columnas directamente por su nombre.
+Definimos nuestro modelo y la interfaz que implementaremos. La propiedad `Descripcion` es nullable para demostrar el manejo de nulos.
 
 ```csharp
-private Producto MapProducto(IDataReader dr)
+public class Producto
 {
-    return new Producto()
+    public Guid Id { get; set; }
+    public string Nombre { get; set; }
+    public decimal Precio { get; set; }
+    public int Stock { get; set; }
+    public string? Descripcion { get; set; } // Campo Nulable
+}
+
+public interface IProductosRepo
+{
+    Task<Producto?> GetById(Guid id);
+    Task<IEnumerable<Producto>> GetAll();
+    Task<int> Create(Producto producto);
+    Task<int> Update(Producto producto);
+    Task<int> Delete(Guid id);
+    Task<int> GetTotalStock();
+}
+```
+
+### 3. Implementación del Repositorio
+
+Ahora, creamos la clase `ProductosRepo` que implementa la interfaz.
+
+#### 3.1. Inyección y Mapeo de Datos
+
+Inyectamos `IDbAsync` en el constructor. El método `MapProducto` se encargará de convertir los datos de `IDataReader` a nuestro objeto `Producto`.
+
+-   **`dr.GetString("Nombre")`**: Métodos de extensión para leer tipos de datos de forma segura.
+-   **`dr.FromDb<string?>("Descripcion")`**: Método genérico para manejar columnas que pueden ser `DBNull.Value`, especialmente útil para tipos `Nullable`.
+
+```csharp
+using Ro.Npgsql.Data;
+using System.Data;
+
+public class ProductosRepo : IProductosRepo
+{
+    private readonly IDbAsync _db;
+
+    public ProductosRepo(IDbAsync db)
     {
-        Id = dr.GetGuid("Id"), // Lanza excepción si es DBNull
-        Nombre = dr.GetString("Nombre"), // Lanza excepción si es DBNull
-        Precio = dr.GetDecimal("Precio"), // Lanza excepción si es DBNull
-        // ... otros campos
-    };
-}
-```
+        _db = db;
+    }
 
-#### Manejo de Nulos con `FromDb<T>`
-
-Para columnas que pueden ser nulas (`Nullable`), el método genérico `FromDb<T>` es la mejor opción.
-
-```csharp
-private Ajuste MapAjuste(IDataReader dr)
-{
-    return new Ajuste()
+    private Producto MapProducto(IDataReader dr)
     {
-        Id = dr.GetGuid("Id"),
-        // ClienteId puede ser nulo en la base de datos
-        ClienteId = dr.FromDb<Guid?>("ClienteId"), 
-        Pago = dr.FromDb<decimal>("Pago"),
-        // Proporcionar un valor por defecto si UserUpdatedId es nulo
-        UserUpdatedId = dr.FromDb("UserUpdatedId", Guid.Empty),
-    };
+        return new Producto()
+        {
+            Id = dr.GetGuid("Id"),
+            Nombre = dr.GetString("Nombre"),
+            Precio = dr.GetDecimal("Precio"),
+            Stock = dr.GetInt("Stock"),
+            Descripcion = dr.FromDb<string?>("Descripcion") // Manejo de nulos
+        };
+    }
+    
+    // ... implementación de métodos CRUD
 }
 ```
 
-### 3. Ejemplos de la Interfaz `IDbAsync`
+#### 3.2. Creación de Comandos y Parámetros (`ToCmd` y `ToParam`)
 
-A continuación se muestran ejemplos para cada uno de los métodos disponibles en la interfaz `IDbAsync`.
+Para crear comandos, usamos los métodos de extensión `ToCmd()` y `ToParam()`. Esto hace que el código sea más limpio y legible.
 
-#### `ExecuteNonQuery`
+-   **`sql.ToCmd(...)`**: Convierte un string SQL en un `DbCommand`.
+-   **`valor.ToParam("@nombre")`**: Convierte un valor (string, int, Guid, etc.) en un `IDbDataParameter`.
 
-Úsalo para sentencias `INSERT`, `UPDATE` o `DELETE` que no retornan un resultado. Devuelve el número de filas afectadas.
+#### 3.3. Implementación de Métodos CRUD
 
-```csharp
-public Task<int> UpdateNombreProducto(Guid id, string nuevoNombre)
-{
-    var sql = "UPDATE Productos SET Nombre = @nombre WHERE Id = @id;";
-    var cmd = sql.ToCmd(
-        nuevoNombre.ToParam("@nombre"),
-        id.ToParam("@id")
-    );
-    return _db.ExecuteNonQuery(cmd);
-}
-```
+**Read (Leer uno y leer todos)**
 
-#### `ExecuteScalar`
-
-Úsalo cuando esperas un único valor como resultado (por ejemplo, un `COUNT`, `SUM` o un ID).
+-   **`GetOneRow`**: Recupera un único registro. Devuelve `null` si no lo encuentra.
+-   **`GetRows`**: Recupera una colección de registros.
 
 ```csharp
-public async Task<int> ContarProductosEnStock()
+public Task<Producto?> GetById(Guid id)
 {
-    var sql = "SELECT COUNT(*) FROM v_inventario WHERE Stock > 0;";
-    var cmd = sql.ToCmd();
-    object result = await _db.ExecuteScalar(cmd);
-    return Convert.ToInt32(result);
-}
-```
-
-#### `GetOneRow`
-
-Recupera un único registro del resultado de una consulta. Si no se encuentran filas, devuelve `null`.
-
-```csharp
-public Task<Producto> GetOne(Guid id)
-{
-    var sql = "SELECT * FROM Productos WHERE Id = @id";
+    var sql = "SELECT * FROM Productos WHERE Id = @id;";
     var cmd = sql.ToCmd(id.ToParam("@id"));
-    return _db.GetOneRow(cmd, MapProducto); // MapProducto es tu función de mapeo
+    return _db.GetOneRow(cmd, MapProducto);
 }
-```
 
-#### `GetRows`
-
-Recupera una colección de registros (`IEnumerable<T>`) del resultado de una consulta.
-
-```csharp
 public Task<IEnumerable<Producto>> GetAll()
 {
-    var sql = "SELECT * FROM Productos ORDER BY Nombre";
+    var sql = "SELECT * FROM Productos ORDER BY Nombre;";
     var cmd = sql.ToCmd();
     return _db.GetRows(cmd, MapProducto);
 }
 ```
 
-#### `ExecuteReader`
+**Create, Update, Delete (Crear, Actualizar, Borrar)**
 
-Procesa un resultado fila por fila. Es útil para manejar grandes volúmenes de datos sin cargarlos todos en memoria a la vez.
+-   **`ExecuteNonQuery`**: Se usa para operaciones que no devuelven un conjunto de resultados. Devuelve el número de filas afectadas.
 
 ```csharp
-public async Task ProcesarProductos()
+public Task<int> Create(Producto producto)
 {
-    var sql = "SELECT Id, Nombre FROM Productos";
+    var sql = @"INSERT INTO Productos (Id, Nombre, Precio, Stock, Descripcion) 
+                VALUES (@id, @nombre, @precio, @stock, @descripcion);";
+    var cmd = sql.ToCmd(
+        producto.Id.ToParam("@id"),
+        producto.Nombre.ToParam("@nombre"),
+        producto.Precio.ToParam("@precio"),
+        producto.Stock.ToParam("@stock"),
+        producto.Descripcion.ToParam("@descripcion")
+    );
+    return _db.ExecuteNonQuery(cmd);
+}
+
+public Task<int> Update(Producto producto)
+{
+    var sql = @"UPDATE Productos SET 
+                    Nombre = @nombre, Precio = @precio, 
+                    Stock = @stock, Descripcion = @descripcion
+                WHERE Id = @id;";
+    var cmd = sql.ToCmd(
+        producto.Nombre.ToParam("@nombre"),
+        producto.Precio.ToParam("@precio"),
+        producto.Stock.ToParam("@stock"),
+        producto.Descripcion.ToParam("@descripcion"),
+        producto.Id.ToParam("@id")
+    );
+    return _db.ExecuteNonQuery(cmd);
+}
+
+public Task<int> Delete(Guid id)
+{
+    var sql = "DELETE FROM Productos WHERE Id = @id;";
+    var cmd = sql.ToCmd(id.ToParam("@id"));
+    return _db.ExecuteNonQuery(cmd);
+}
+```
+
+#### 3.4. Casos de Uso Adicionales
+
+**`ExecuteScalar` para obtener un valor único**
+
+Útil para agregaciones como `COUNT`, `SUM`, `AVG`, etc.
+
+```csharp
+public async Task<int> GetTotalStock()
+{
+    var sql = "SELECT SUM(Stock) FROM Productos;";
+    var cmd = sql.ToCmd();
+    object? result = await _db.ExecuteScalar(cmd);
+    return result != null ? Convert.ToInt32(result) : 0;
+}
+```
+
+**`ExecuteReader` para procesar grandes resultados**
+
+Ideal para procesar datos fila por fila sin cargarlos todos en memoria.
+
+```csharp
+public async Task LogStockDeProductos()
+{
+    var sql = "SELECT Nombre, Stock FROM Productos;";
     var cmd = sql.ToCmd();
 
     await _db.ExecuteReader(cmd, dr =>
     {
-        // Esta acción se ejecuta por cada fila leída
-        var id = dr.GetGuid("Id");
         var nombre = dr.GetString("Nombre");
-        Console.WriteLine($"Procesando: {id} - {nombre}");
+        var stock = dr.GetInt("Stock");
+        Console.WriteLine($"Producto: {nombre}, Stock: {stock}");
     });
-}
-```
-
-#### `GetOneRowAsync` y `GetRowsAsync`
-
-Estas variantes son útiles cuando la propia lógica de mapeo es asíncrona (por ejemplo, si necesitas hacer otra llamada a la base de datos o a una API para construir tu objeto).
-
-```csharp
-// Ejemplo de un mapeador asíncrono
-private async Task<ProductoConDetalles> MapProductoConDetallesAsync(IDataReader dr)
-{
-    var producto = new ProductoConDetalles
-    {
-        Id = dr.GetGuid("Id"),
-        Nombre = dr.GetString("Nombre")
-    };
-    
-    // Llama a otro servicio/repo de forma asíncrona durante el mapeo
-    producto.DetallesExtras = await _otroServicio.GetDetalles(producto.Id); 
-    
-    return producto;
-}
-
-public Task<ProductoConDetalles> GetOneConDetalles(Guid id)
-{
-    var sql = "SELECT Id, Nombre FROM Productos WHERE Id = @id";
-    var cmd = sql.ToCmd(id.ToParam("@id"));
-    return _db.GetOneRowAsync(cmd, MapProductoConDetallesAsync);
-}
-
-public Task<IEnumerable<ProductoConDetalles>> GetAllConDetalles()
-{
-    var sql = "SELECT Id, Nombre FROM Productos";
-    var cmd = sql.ToCmd();
-    return _db.GetRowsAsync(cmd, MapProductoConDetallesAsync);
 }
 ```
 
 ### 4. Registrar y Usar el Repositorio
 
-Finalmente, registra tu repositorio en el contenedor de DI y úsalo en tus servicios o controladores.
+Finalmente, registra tu repositorio en `Program.cs` y luego inyéctalo en tus controladores o servicios.
 
 ```csharp
 // Program.cs
-...
+// ...
 builder.Services.AddScoped<IProductosRepo, ProductosRepo>();
-...
+// ...
 ```
+
+```csharp
+// ProductosController.cs
+[ApiController]
+[Route("[controller]")]
+public class ProductosController : ControllerBase
+{
+    private readonly IProductosRepo _productosRepo;
+
+    public ProductosController(IProductosRepo productosRepo)
+    {
+        _productosRepo = productosRepo;
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> Get(Guid id)
+    {
+        var producto = await _productosRepo.GetById(id);
+        return producto != null ? Ok(producto) : NotFound();
+    }
+}
+```
+
+## Publicar una Nueva Versión
 
 ## Publicar una Nueva Versión
 
