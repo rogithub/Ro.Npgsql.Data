@@ -10,7 +10,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RepositoryUrl>https://github.com/rogithub/Ro.Npgsql.Data</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

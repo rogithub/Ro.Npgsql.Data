@@ -31,9 +31,9 @@ namespace Ro.Npgsql.Data
             return conn;
         }
 
-        public static async Task<object> ExecuteScalarAsync(DbCommand command, DbConnection connection)
+        public static async Task<object?> ExecuteScalarAsync(DbCommand command, DbConnection connection)
         {
-            return await ExecuteAsync<object>(command, connection, async (cmd, conn) =>
+            return await ExecuteAsync<object?>(command, connection, async (cmd, conn) =>
             {
                 return await cmd.ExecuteScalarAsync();
             });
@@ -72,9 +72,9 @@ namespace Ro.Npgsql.Data
             });
         }
 
-        public static async Task<T> GetOneRow<T>(DbCommand command, DbConnection connection, Func<IDataReader, T> mapper)
+        public static async Task<T?> GetOneRow<T>(DbCommand command, DbConnection connection, Func<IDataReader, T> mapper) where T : class        
         {
-            return await ExecuteAsync<T>(command, connection, async (cmd, conn) =>
+            return await ExecuteAsync<T?>(command, connection, async (cmd, conn) =>
             {
                 using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
                 {
@@ -83,9 +83,9 @@ namespace Ro.Npgsql.Data
             });
         }
 
-        public static async Task<T> GetOneRowAsync<T>(DbCommand command, DbConnection connection, Func<IDataReader, Task<T>> mapper)
+        public static async Task<T?> GetOneRowAsync<T>(DbCommand command, DbConnection connection, Func<IDataReader, Task<T>> mapper) where T : class
         {
-            return await ExecuteAsync<T>(command, connection, async (cmd, conn) =>
+            return await ExecuteAsync<T?>(command, connection, async (cmd, conn) =>
             {
                 using (IDataReader dr = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
                 {

@@ -25,7 +25,7 @@ namespace Ro.Npgsql.Data
             return DbTasks.ExecuteNonQueryAsync(cmd, GetConnection());
         }
 
-        public Task<object> ExecuteScalar(DbCommand cmd)
+        public Task<object?> ExecuteScalar(DbCommand cmd)
         {
             return DbTasks.ExecuteScalarAsync(cmd, GetConnection());
         }
@@ -35,7 +35,7 @@ namespace Ro.Npgsql.Data
             return DbTasks.ExecuteReaderAsync(cmd, GetConnection(), action, behavior);
         }
 
-        public Task<T> GetOneRow<T>(DbCommand cmd, Func<IDataReader, T> mapper)
+        public Task<T?> GetOneRow<T>(DbCommand cmd, Func<IDataReader, T> mapper) where T : class
         {
             return DbTasks.GetOneRow(cmd, GetConnection(), mapper);
         }
@@ -45,7 +45,7 @@ namespace Ro.Npgsql.Data
             return DbTasks.GetRows(cmd, GetConnection(), mapper);
         }
 
-        public Task<T> GetOneRowAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper)
+        public Task<T?> GetOneRowAsync<T>(DbCommand cmd, Func<IDataReader, Task<T>> mapper) where T : class
         {
             return DbTasks.GetOneRowAsync(cmd, GetConnection(), mapper);
         }
