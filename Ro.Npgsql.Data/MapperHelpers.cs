@@ -7,28 +7,17 @@ namespace Ro.Npgsql.Data
 
     public static class Mappers
     {
-        public static T FromDb<T>(this IDataReader dr, string name, T defaultValue = null) where T : class
+        public static T FromDb<T>(this IDataReader dr, string name, T? defaultValue = default(T))
         {
+            var isNullableType = Nullable.GetUnderlyingType(typeof (T)) != null;
             var value = dr[name];
-            
-            if (value == null || value == DBNull.Value)
+
+            if (value == DBNull.Value)
             {
-                return defaultValue;
+                return defaultValue; 
             }
 
-            return (T)value;
-        }
-
-        public static T? FromDb<T>(this IDataReader dr, string name, T? defaultValue = null) where T : struct
-        {
-            var value = dr[name];
-            
-            if (value == null || value == DBNull.Value)
-            {
-                return defaultValue;
-            }
-
-            return (T)value;
+            return (T)value!;
         }
         
         public static Func<object, DateTime> ToDate = (o) =>
