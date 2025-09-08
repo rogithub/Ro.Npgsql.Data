@@ -45,7 +45,7 @@ namespace Ro.Npgsql.Data
             
             if (type == null)
             {
-                type = typeof(object); // Valor por defecto
+                type = typeof(T); // Valor por defecto
             }
 
             var dbType = ToDbType(type);            
