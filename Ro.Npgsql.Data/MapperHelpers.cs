@@ -19,9 +19,12 @@ namespace Ro.Npgsql.Data
 
             return (T)value!;
         }
-        
+
         public static Func<object, DateTime> ToDate = (o) =>
         {
+            if (o is DateOnly dateOnly)
+                return dateOnly.ToDateTime(TimeOnly.MinValue);
+            
             return Convert.ToDateTime(o);
         };
 
